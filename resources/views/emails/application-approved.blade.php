@@ -41,7 +41,7 @@
             padding: 25px; 
             margin: 20px 0; 
             border-radius: 10px; 
-            border-left: 5px solid #27AE60; 
+            border-left: 5px solidrgb(174, 39, 39); 
             text-align: center;
         }
         .success-box h2 {
@@ -132,7 +132,7 @@
     <div class="container">
         <div class="header">
             <h1>🎉 Congratulations!</h1>
-            <p>Your IELTS Course Admission is Confirmed</p>
+            <p>Banglay IELTS Admission is Confirmed</p>
         </div>
         
         <div class="content">
@@ -143,7 +143,7 @@
             </div>
             
             <div class="info-box">
-                <h3>📚 Your Class Schedule</h3>
+                <h3>Your Class Schedule</h3>
                 <div class="info-grid">
                     <div class="info-item">
                         <strong>Batch Name:</strong>
@@ -165,7 +165,7 @@
             </div>
             
             <div class="info-box">
-                <h3>📋 Course Details</h3>
+                <h3>Course Details</h3>
                 <ul>
                     <li><strong>Course Type:</strong> {{ $courseType }}</li>
                     <li><strong>Duration:</strong> {{ $courseDuration }}</li>
@@ -185,41 +185,16 @@
                 @endif
             </div>
             
-            <div class="highlight">
-                <h3>⚡ Important Instructions</h3>
-                <ol>
-                   
-                    <li><strong>Communication:</strong> For any queries, contact us via WhatsApp or call</li>
-                    <li><strong>Feedback:</strong> We value your feedback; feel free to share your thoughts</li>
-              
-                </ol>
-            </div>
-            
-            <div class="info-box">
-                <h3>Stay Connected</h3>
-                <p><strong>Contact Number:</strong> {{ $contactNumber }}</p>
-                @if($youtubeLink)
-                <p><strong>YouTube Channel:</strong> <a href="{{ $youtubeLink }}">Subscribe for free lessons</a></p>
-                @endif
-                <p><strong>Class Information:</strong> Will be shared via SMS before class starts</p>
-            </div>
-            
-            <div style="text-align: center; margin: 40px 0;">
-                <p style="font-size: 18px; color: #27AE60;">
-                    <strong>We look forward to seeing you in class!</strong>
-                </p>
-                <a href="tel:{{ $contactNumber }}" class="button">Call Us Now</a>
-            </div>
+          
             
             <div style="background-color: #E3F2FD; padding: 20px; border-radius: 8px; margin-top: 30px;">
                 <p style="margin: 0;"><strong>Need Help?</strong></p>
-                <p style="margin: 5px 0;">If you have any questions or concerns, please don't hesitate to contact us at {{ $contactNumber }} or reply to this email.</p>
+                <p style="margin: 5px 0;">If you have any questions or concerns, please don't hesitate to contact us at {{ $contactNumber }}.</p>
             </div>
         </div>
         
         <div class="footer">
             <p>This is an automated confirmation email for your IELTS course admission.</p>
-            <p>Approved on: {{ $approvedAt }}</p>
             <p>© {{ date('Y') }} Banglay IELTS . Made with ❤️ Rocks</p>
             <p>
                 <a href="#">Terms & Conditions</a> | 

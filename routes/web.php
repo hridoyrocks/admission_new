@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\BatchController;
 use App\Http\Controllers\Admin\ApplicationController;
 use App\Http\Controllers\Admin\PaymentMethodController;
 use App\Http\Controllers\Admin\TimeConditionController;
+use App\Services\SmsService;
 
 // Student Routes
 Route::get('/', [StudentController::class, 'index'])->name('home');
@@ -52,4 +53,92 @@ Route::prefix('admin')->group(function () {
         Route::get('/time-conditions', [TimeConditionController::class, 'index'])->name('admin.time.conditions');
         Route::put('/time-conditions/{condition}', [TimeConditionController::class, 'update'])->name('admin.time.conditions.update');
     });
+});
+
+
+Route::get('/test-all-sms/{phone?}', function($phone = '01753477957') {
+    $smsService = app(\App\Services\SmsService::class);
+    
+    // Test data
+    $student = new \stdClass();
+    $student->name = 'Test Student';
+    $student->phone = $phone;
+    
+    $application = new \stdClass();
+    $application->id = 123;
+    $application->rejection_reason = 'Insufficient score';
+    $application->batch = new \stdClass();
+    $application->batch->name = 'January 2025';
+    $application->batch->start_date = now()->addDays(7);
+    
+    $student->classSession = new \stdClass();
+    $student->classSession->time = 'Morning 8:00 AM';
+    $student->classSession->days = 'Sun, Tue, Thu';
+    
+    $courseSetting = new \stdClass();
+    $courseSetting->contact_number = '01712345678';
+    
+    $messages = [
+        'submitted' => \App\Helpers\SmsTemplates::applicationSubmitted($student, $application),
+        'approved' => \App\Helpers\SmsTemplates::applicationApproved($student, $application, $courseSetting),
+        'rejected' => \App\Helpers\SmsTemplates::applicationRejected($student, $application),
+        'welcome' => \App\Helpers\SmsTemplates::welcomeMessage($student),
+        'payment_reminder' => \App\Helpers\SmsTemplates::paymentReminder($student, 8000),
+        'class_reminder' => \App\Helpers\SmsTemplates::classReminder($student, 'Morning 8:00 AM', 'Sun, Tue, Thu'),
+        'score_update' => \App\Helpers\SmsTemplates::scoreUpdate($student, 'Mock Test 1', '7.5/9'),
+    ];
+    
+    return response()->json([
+        'phone' => $phone,
+        'templates' => $messages,
+        'info' => 'Use /send-test-sms-template/{type}/{phone} to send specific SMS'
+    ], 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+});
+
+Route::get('/send-test-sms-template/{type}/{phone?}', function($type, $phone = '01753477957') {
+    $smsService = app(\App\Services\SmsService::class);
+    
+    // Same test data as above...
+    $student = new \stdClass();
+    $student->name = 'Test Student';
+    $student->phone = $phone;
+    
+    $application = new \stdClass();
+    $application->id = 123;
+    $application->rejection_reason = 'Insufficient score';
+    $application->batch = new \stdClass();
+    $application->batch->name = 'January 2025';
+    $application->batch->start_date = now()->addDays(7);
+    
+    $student->classSession = new \stdClass();
+    $student->classSession->time = 'Morning 8:00 AM';
+    $student->classSession->days = 'Sun, Tue, Thu';
+    
+    $courseSetting = new \stdClass();
+    $courseSetting->contact_number = '01712345678';
+    
+    $message = match($type) {
+        'submitted' => \App\Helpers\SmsTemplates::applicationSubmitted($student, $application),
+        'approved' => \App\Helpers\SmsTemplates::applicationApproved($student, $application, $courseSetting),
+        'rejected' => \App\Helpers\SmsTemplates::applicationRejected($student, $application),
+        'welcome' => \App\Helpers\SmsTemplates::welcomeMessage($student),
+        'payment' => \App\Helpers\SmsTemplates::paymentReminder($student, 8000),
+        'class' => \App\Helpers\SmsTemplates::classReminder($student, 'Morning 8:00 AM', 'Sun, Tue, Thu'),
+        'score' => \App\Helpers\SmsTemplates::scoreUpdate($student, 'Mock Test 1', '7.5/9'),
+        default => 'Invalid type'
+    };
+    
+    if ($message === 'Invalid type') {
+        return response()->json(['error' => 'Invalid SMS type']);
+    }
+    
+    $result = $smsService->send($phone, $message);
+    
+    return response()->json([
+        'success' => $result,
+        'type' => $type,
+        'phone' => $phone,
+        'message' => $message,
+        'status' => $result ? 'SMS sent successfully!' : 'SMS failed!'
+    ], 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
 });

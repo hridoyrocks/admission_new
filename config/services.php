@@ -15,13 +15,14 @@ return [
     ],
 
     'resend' => [
-        'key' => env('RESEND_KEY'),
-    ],
+    'key' => env('RESEND_API_KEY'),
+],
 
     'sms' => [
     'url' => env('SMS_API_URL', 'http://bulksmsbd.net/api/smsapi'),
     'api_key' => env('SMS_API_KEY', ''),
     'sender_id' => env('SMS_SENDER_ID', '8809617612445'),
+    'enabled' => env('SMS_ENABLED', true), // Development a false rakhbo ami
 ],
 
     'slack' => [

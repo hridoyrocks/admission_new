@@ -7,6 +7,7 @@ use App\Models\Application;
 use App\Models\CourseSetting;
 use App\Models\Batch;
 use App\Services\SmsService;
+use App\Helpers\SmsTemplates;
 use App\Mail\ApplicationApproved;
 use App\Mail\ApplicationRejected;
 use Illuminate\Http\Request;
@@ -141,6 +142,9 @@ class ApplicationController extends Controller
                 'approved_by' => auth()->guard('admin')->id()
             ]);
             
+            // Load relationships
+            $application->load(['student.classSession', 'batch']);
+            
             $student = $application->student;
             $courseSetting = CourseSetting::first();
             
@@ -154,7 +158,7 @@ class ApplicationController extends Controller
             Log::info('Application approved', [
                 'application_id' => $application->id,
                 'student_id' => $student->id,
-                'approved_by' => auth()->guard('admin')->user()->email
+                'approved_by' => auth()->guard('admin')->user()->email ?? 'Unknown'
             ]);
             
             DB::commit();
@@ -169,7 +173,7 @@ class ApplicationController extends Controller
                 'error' => $e->getMessage()
             ]);
             
-            return redirect()->back()->with('error', 'Failed to approve application. Please try again.');
+            return redirect()->back()->with('error', 'Failed to approve application: ' . $e->getMessage());
         }
     }
 
@@ -199,6 +203,9 @@ class ApplicationController extends Controller
                 'rejected_by' => auth()->guard('admin')->id()
             ]);
             
+            // Load relationships
+            $application->load(['student', 'batch']);
+            
             $student = $application->student;
             $courseSetting = CourseSetting::first();
             
@@ -213,7 +220,7 @@ class ApplicationController extends Controller
                 'application_id' => $application->id,
                 'student_id' => $student->id,
                 'reason' => $request->rejection_reason,
-                'rejected_by' => auth()->guard('admin')->user()->email
+                'rejected_by' => auth()->guard('admin')->user()->email ?? 'Unknown'
             ]);
             
             DB::commit();
@@ -228,7 +235,7 @@ class ApplicationController extends Controller
                 'error' => $e->getMessage()
             ]);
             
-            return redirect()->back()->with('error', 'Failed to reject application. Please try again.');
+            return redirect()->back()->with('error', 'Failed to reject application: ' . $e->getMessage());
         }
     }
 
@@ -254,12 +261,36 @@ class ApplicationController extends Controller
             try {
                 switch ($request->action) {
                     case 'approve':
-                        $this->approve($application);
+                        // Direct approve without calling the full approve method to avoid redirect
+                        $application->update([
+                            'status' => 'approved',
+                            'approved_at' => now(),
+                            'approved_by' => auth()->guard('admin')->id()
+                        ]);
+                        
+                        $application->load(['student.classSession', 'batch']);
+                        $courseSetting = CourseSetting::first();
+                        
+                        $this->sendApprovalEmail($application->student, $application, $courseSetting);
+                        $this->sendApprovalSms($application->student, $application, $courseSetting);
+                        
                         $processed++;
                         break;
                         
                     case 'reject':
-                        $this->reject(new Request(['rejection_reason' => 'Bulk rejection']), $application);
+                        $application->update([
+                            'status' => 'rejected',
+                            'rejection_reason' => 'Bulk rejection',
+                            'rejected_at' => now(),
+                            'rejected_by' => auth()->guard('admin')->id()
+                        ]);
+                        
+                        $application->load(['student', 'batch']);
+                        $courseSetting = CourseSetting::first();
+                        
+                        $this->sendRejectionEmail($application->student, $application, $courseSetting);
+                        $this->sendRejectionSms($application->student, $application);
+                        
                         $processed++;
                         break;
                         
@@ -352,17 +383,17 @@ class ApplicationController extends Controller
             foreach ($applications as $app) {
                 fputcsv($file, [
                     $app->id,
-                    $app->student->name,
-                    $app->student->email,
-                    $app->student->phone,
-                    strtoupper($app->student->course_type),
-                    ucfirst(str_replace('_', ' ', $app->student->profession)),
-                    $app->student->score . '/40',
-                    $app->batch->name,
+                    $app->student->name ?? 'N/A',
+                    $app->student->email ?? 'N/A',
+                    $app->student->phone ?? 'N/A',
+                    strtoupper($app->student->course_type ?? 'N/A'),
+                    ucfirst(str_replace('_', ' ', $app->student->profession ?? 'N/A')),
+                    ($app->student->score ?? 0) . '/40',
+                    $app->batch->name ?? 'N/A',
                     $app->student->classSession->time ?? 'N/A',
                     $app->student->classSession->days ?? 'N/A',
-                    $app->payment_method,
-                    $app->payment_id,
+                    $app->payment_method ?? 'N/A',
+                    $app->payment_id ?? 'N/A',
                     ucfirst($app->status),
                     $app->created_at->format('Y-m-d H:i:s'),
                     $app->approved_at ?? $app->rejected_at ?? 'N/A',
@@ -405,6 +436,13 @@ class ApplicationController extends Controller
     private function sendApprovalEmail($student, $application, $courseSetting)
     {
         try {
+            if (!$student || !$student->email) {
+                Log::warning('Cannot send approval email - student email not found', [
+                    'application_id' => $application->id
+                ]);
+                return;
+            }
+
             Mail::to($student->email)->send(new ApplicationApproved($student, $application, $courseSetting));
             
             Log::info('Approval email sent', [
@@ -414,27 +452,46 @@ class ApplicationController extends Controller
         } catch (\Exception $e) {
             Log::error('Approval email failed', [
                 'error' => $e->getMessage(),
-                'student_email' => $student->email
+                'student_email' => $student->email ?? 'Unknown'
             ]);
             // Don't throw exception, continue with process
         }
     }
 
     /**
-     * Send approval SMS
+     * Send approval SMS using SmsTemplates
      */
     private function sendApprovalSms($student, $application, $courseSetting)
     {
         try {
-            $message = "✅ অভিনন্দন {$student->name}!\n";
-            $message .= "আপনার IELTS কোর্স এডমিশন কনফার্ম হয়েছে।\n";
-            $message .= "📚 Batch: {$application->batch->name}\n";
-            $message .= "⏰ Time: {$student->classSession->time}\n";
-            $message .= "📅 Days: {$student->classSession->days}\n";
-            $message .= "🚀 Class starts: {$application->batch->start_date->format('d M Y')}\n";
-            $message .= "📱 Contact: {$courseSetting->contact_number}";
+            if (!$student || !$student->phone) {
+                Log::warning('Cannot send approval SMS - student phone not found', [
+                    'application_id' => $application->id
+                ]);
+                return;
+            }
+
+            // Check if SmsTemplates class exists
+            if (class_exists('App\Helpers\SmsTemplates')) {
+                $message = SmsTemplates::applicationApproved($student, $application, $courseSetting);
+            } else {
+                // Fallback to inline message
+                $message = "✅ অভিনন্দন {$student->name}!\n";
+                $message .= "আপনার IELTS কোর্স এডমিশন কনফার্ম হয়েছে।\n";
+                $message .= "📚 Batch: " . ($application->batch->name ?? 'N/A') . "\n";
+                $message .= "⏰ Time: " . ($student->classSession->time ?? 'N/A') . "\n";
+                $message .= "📅 Days: " . ($student->classSession->days ?? 'N/A') . "\n";
+                $message .= "🚀 Class starts: " . ($application->batch->start_date ? $application->batch->start_date->format('d M Y') : 'N/A') . "\n";
+                $message .= "📱 Contact: " . ($courseSetting->contact_number ?? 'N/A');
+            }
             
             $this->smsService->send($student->phone, $message);
+            
+            // Optional: Send welcome message after approval
+            if (class_exists('App\Helpers\SmsTemplates') && method_exists(SmsTemplates::class, 'welcomeMessage')) {
+                $welcomeMessage = SmsTemplates::welcomeMessage($student);
+                $this->smsService->send($student->phone, $welcomeMessage);
+            }
             
             Log::info('Approval SMS sent', [
                 'student_phone' => $student->phone,
@@ -443,7 +500,7 @@ class ApplicationController extends Controller
         } catch (\Exception $e) {
             Log::error('Approval SMS failed', [
                 'error' => $e->getMessage(),
-                'student_phone' => $student->phone
+                'student_phone' => $student->phone ?? 'Unknown'
             ]);
         }
     }
@@ -454,6 +511,13 @@ class ApplicationController extends Controller
     private function sendRejectionEmail($student, $application, $courseSetting)
     {
         try {
+            if (!$student || !$student->email) {
+                Log::warning('Cannot send rejection email - student email not found', [
+                    'application_id' => $application->id
+                ]);
+                return;
+            }
+
             Mail::to($student->email)->send(new ApplicationRejected($student, $application, $courseSetting));
             
             Log::info('Rejection email sent', [
@@ -463,23 +527,36 @@ class ApplicationController extends Controller
         } catch (\Exception $e) {
             Log::error('Rejection email failed', [
                 'error' => $e->getMessage(),
-                'student_email' => $student->email
+                'student_email' => $student->email ?? 'Unknown'
             ]);
         }
     }
 
     /**
-     * Send rejection SMS
+     * Send rejection SMS using SmsTemplates
      */
     private function sendRejectionSms($student, $application)
     {
         try {
-            $message = "প্রিয় {$student->name},\n";
-            $message .= "দুঃখিত, আপনার IELTS কোর্স আবেদন গ্রহণযোগ্য হয়নি।\n";
-            if ($application->rejection_reason) {
-                $message .= "কারণ: {$application->rejection_reason}\n";
+            if (!$student || !$student->phone) {
+                Log::warning('Cannot send rejection SMS - student phone not found', [
+                    'application_id' => $application->id
+                ]);
+                return;
             }
-            $message .= "বিস্তারিত জানতে ইমেইল চেক করুন।";
+
+            // Check if SmsTemplates class exists
+            if (class_exists('App\Helpers\SmsTemplates')) {
+                $message = SmsTemplates::applicationRejected($student, $application);
+            } else {
+                // Fallback to inline message
+                $message = "প্রিয় {$student->name},\n";
+                $message .= "দুঃখিত, আপনার IELTS কোর্স আবেদন গ্রহণযোগ্য হয়নি।\n";
+                if ($application->rejection_reason) {
+                    $message .= "কারণ: {$application->rejection_reason}\n";
+                }
+                $message .= "বিস্তারিত জানতে ইমেইল চেক করুন।";
+            }
             
             $this->smsService->send($student->phone, $message);
             
@@ -490,7 +567,7 @@ class ApplicationController extends Controller
         } catch (\Exception $e) {
             Log::error('Rejection SMS failed', [
                 'error' => $e->getMessage(),
-                'student_phone' => $student->phone
+                'student_phone' => $student->phone ?? 'Unknown'
             ]);
         }
     }
@@ -504,8 +581,15 @@ class ApplicationController extends Controller
             return redirect()->back()->with('error', 'Cannot send notification for pending application.');
         }
 
+        // Load relationships
+        $application->load(['student.classSession', 'batch']);
+        
         $student = $application->student;
         $courseSetting = CourseSetting::first();
+
+        if (!$student) {
+            return redirect()->back()->with('error', 'Student information not found.');
+        }
 
         try {
             if ($application->status === 'approved') {
@@ -523,7 +607,7 @@ class ApplicationController extends Controller
                 'error' => $e->getMessage()
             ]);
             
-            return redirect()->back()->with('error', 'Failed to resend notification.');
+            return redirect()->back()->with('error', 'Failed to resend notification: ' . $e->getMessage());
         }
     }
 }

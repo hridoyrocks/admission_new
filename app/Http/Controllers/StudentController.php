@@ -342,30 +342,26 @@ class StudentController extends Controller
      * Send application confirmation SMS
      */
     private function sendApplicationSms($student, $application)
-    {
-        try {
-            $message = sprintf(
-                "প্রিয় %s,\nআপনার IELTS কোর্স আবেদন গ্রহণ করা হয়েছে।\nApplication ID: #%d\nBatch: %s\nআমরা শীঘ্রই আপনার সাথে যোগাযোগ করব।\nধন্যবাদ।",
-                $student->name,
-                $application->id,
-                $application->batch->name
-            );
-            
-            $sent = $this->smsService->send($student->phone, $message);
-            
-            if ($sent) {
-                Log::info('Application SMS sent', [
-                    'student_phone' => $student->phone,
-                    'application_id' => $application->id
-                ]);
-            }
-        } catch (\Exception $e) {
-            Log::error('SMS sending failed', [
-                'error' => $e->getMessage(),
-                'student_phone' => $student->phone
+{
+    try {
+        // Use the SMS template
+        $message = \App\Helpers\SmsTemplates::applicationSubmitted($student, $application);
+        
+        $sent = $this->smsService->send($student->phone, $message);
+        
+        if ($sent) {
+            Log::info('Application SMS sent', [
+                'student_phone' => $student->phone,
+                'application_id' => $application->id
             ]);
         }
+    } catch (\Exception $e) {
+        Log::error('SMS sending failed', [
+            'error' => $e->getMessage(),
+            'student_phone' => $student->phone
+        ]);
     }
+}
 
     /**
      * Check application status (for future use)

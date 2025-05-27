@@ -11,23 +11,18 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class ApplicationRejected extends Mailable
+class ApplicationSubmitted extends Mailable
 {
     use Queueable, SerializesModels;
-
-    public $student;
-    public $application;
-    public $courseSetting;
 
     /**
      * Create a new message instance.
      */
-    public function __construct(Student $student, Application $application, CourseSetting $courseSetting = null)
-    {
-        $this->student = $student;
-        $this->application = $application;
-        $this->courseSetting = $courseSetting ?: CourseSetting::first();
-    }
+    public function __construct(
+        public Student $student,
+        public Application $application,
+        public CourseSetting $courseSetting
+    ) {}
 
     /**
      * Get the message envelope.
@@ -35,14 +30,7 @@ class ApplicationRejected extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'IELTS Course - Application Status Update',
-            from: config('mail.from.address', 'noreply@ielts.com'),
-            replyTo: [
-                [
-                    'email' => $this->courseSetting->contact_email ?? config('mail.from.address'),
-                    'name' => 'Banglay IELTS - Admission Updates',
-                ],
-            ],
+            subject: 'Banglay IELTS - Application Received',
         );
     }
 
@@ -52,50 +40,21 @@ class ApplicationRejected extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.application-rejected',
+            view: 'emails.application-submitted',
             with: [
-                // Student Information
                 'studentName' => $this->student->name,
                 'applicationId' => $this->application->id,
-                
-                // Rejection Details
-                'rejectionReason' => $this->application->rejection_reason,
-                'rejectedAt' => $this->application->updated_at->format('d M Y, h:i A'),
-                
-                // Application Details
-                'batchName' => $this->application->batch->name,
-                'paymentMethod' => $this->application->payment_method,
-                'paymentId' => $this->application->payment_id,
-                
-                // Contact Information
-                'contactNumber' => $this->courseSetting->contact_number,
-                'contactEmail' => $this->courseSetting->contact_email ?? config('mail.from.address'),
-                
-                // Next Steps
-                'hasRejectionReason' => !empty($this->application->rejection_reason),
-                'canReapply' => true, // You can add logic here based on rejection reason
-            ]
+                'batchName' => $this->application->batch?->name ?? 'N/A',
+                'classTime' => $this->student->classSession?->time ?? 'N/A',
+                'classDays' => $this->student->classSession?->days ?? 'N/A',
+                'paymentMethod' => $this->application->payment_method ?? 'N/A',
+                'paymentId' => $this->application->payment_id ?? 'N/A',
+                'courseType' => strtoupper($this->student->course_type ?? 'academic'),
+                'profession' => ucfirst(str_replace('_', ' ', $this->student->profession ?? 'student')),
+                'score' => $this->student->score ?? 0,
+                'contactNumber' => $this->courseSetting->contact_number ?? 'N/A',
+                'courseFee' => $this->courseSetting->fee ?? 0,
+            ],
         );
-    }
-
-    /**
-     * Get the message tags.
-     */
-    public function tags(): array
-    {
-        return ['rejected', 'ielts-course', 'batch-' . $this->application->batch->id];
-    }
-
-    /**
-     * Get the message metadata.
-     */
-    public function metadata(): array
-    {
-        return [
-            'application_id' => $this->application->id,
-            'student_id' => $this->student->id,
-            'batch_id' => $this->application->batch->id,
-            'rejection_reason' => $this->application->rejection_reason,
-        ];
     }
 }

@@ -10,25 +10,19 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Mail\Mailables\Attachment;
 
 class ApplicationApproved extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $student;
-    public $application;
-    public $courseSetting;
-
     /**
      * Create a new message instance.
      */
-    public function __construct(Student $student, Application $application, CourseSetting $courseSetting)
-    {
-        $this->student = $student;
-        $this->application = $application;
-        $this->courseSetting = $courseSetting;
-    }
+    public function __construct(
+        public Student $student,
+        public Application $application,
+        public CourseSetting $courseSetting
+    ) {}
 
     /**
      * Get the message envelope.
@@ -37,13 +31,6 @@ class ApplicationApproved extends Mailable
     {
         return new Envelope(
             subject: '✅ IELTS Course - Admission Confirmed!',
-            from: config('mail.from.address', 'noreply@ielts.com'),
-            replyTo: [
-                [
-                    'email' => $this->courseSetting->contact_email ?? config('mail.from.address'),
-                    'name' => 'IELTS Course Support',
-                ],
-            ],
         );
     }
 
@@ -63,76 +50,36 @@ class ApplicationApproved extends Mailable
                 
                 // Course Information
                 'courseType' => strtoupper($this->student->course_type),
-                'courseDuration' => $this->courseSetting->duration,
-                'courseFee' => number_format($this->courseSetting->fee),
-                'courseClasses' => $this->courseSetting->classes,
-                'courseMaterials' => $this->courseSetting->materials,
-                'mockTests' => $this->courseSetting->mock_tests,
-                'additionalInfo' => $this->courseSetting->additional_info,
+                'courseDuration' => $this->courseSetting->duration ?? '2 মাস',
+                'courseFee' => number_format($this->courseSetting->fee ?? 0),
+                'courseClasses' => $this->courseSetting->classes ?? 'সপ্তাহে 3 দিন',
+                'courseMaterials' => $this->courseSetting->materials ?? 'Free PDF + Videos',
+                'mockTests' => $this->courseSetting->mock_tests ?? '5টি',
+                'additionalInfo' => $this->courseSetting->additional_info ?? [],
                 
-                // Batch Information
-                'batchName' => $this->application->batch->name,
-                'batchStartDate' => $this->application->batch->start_date->format('d M Y'),
-                'batchStartDay' => $this->application->batch->start_date->format('l'),
+                // Batch Information - Safe navigation
+                'batchName' => $this->application->batch?->name ?? 'N/A',
+                'batchStartDate' => $this->application->batch?->start_date?->format('d M Y') ?? 'N/A',
+                'batchStartDay' => $this->application->batch?->start_date?->format('l') ?? 'N/A',
                 
-                // Class Information
-                'classTime' => $this->student->classSession->time ?? 'N/A',
-                'classDays' => $this->student->classSession->days ?? 'N/A',
-                'sessionName' => $this->student->classSession->session_name ?? 'N/A',
+                // Class Information - Safe navigation
+                'classTime' => $this->student->classSession?->time ?? 'N/A',
+                'classDays' => $this->student->classSession?->days ?? 'N/A',
+                'sessionName' => $this->student->classSession?->session_name ?? 'N/A',
                 
                 // Contact Information
-                'contactNumber' => $this->courseSetting->contact_number,
-                'youtubeLink' => $this->courseSetting->youtube_link,
+                'contactNumber' => $this->courseSetting->contact_number ?? 'N/A',
+                'youtubeLink' => $this->courseSetting->youtube_link ?? '',
                 
                 // Payment Information
-                'paymentMethod' => $this->application->payment_method,
-                'paymentId' => $this->application->payment_id,
+                'paymentMethod' => $this->application->payment_method ?? 'N/A',
+                'paymentId' => $this->application->payment_id ?? 'N/A',
                 
                 // Additional Data
-                'profession' => ucfirst(str_replace('_', ' ', $this->student->profession)),
-                'score' => $this->student->score,
+                'profession' => ucfirst(str_replace('_', ' ', $this->student->profession ?? 'student')),
+                'score' => $this->student->score ?? 0,
                 'approvedAt' => now()->format('d M Y, h:i A'),
-            ]
+            ],
         );
-    }
-
-    /**
-     * Get the attachments for the message.
-     *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
-     */
-    public function attachments(): array
-    {
-        $attachments = [];
-        
-        // You can attach welcome PDF or course materials here
-        // Example:
-        // if (file_exists(public_path('pdfs/welcome-guide.pdf'))) {
-        //     $attachments[] = Attachment::fromPath(public_path('pdfs/welcome-guide.pdf'))
-        //         ->as('IELTS-Course-Welcome-Guide.pdf')
-        //         ->withMime('application/pdf');
-        // }
-        
-        return $attachments;
-    }
-
-    /**
-     * Get the message tags.
-     */
-    public function tags(): array
-    {
-        return ['approved', 'ielts-course', 'batch-' . $this->application->batch->id];
-    }
-
-    /**
-     * Get the message metadata.
-     */
-    public function metadata(): array
-    {
-        return [
-            'application_id' => $this->application->id,
-            'student_id' => $this->student->id,
-            'batch_id' => $this->application->batch->id,
-        ];
     }
 }
