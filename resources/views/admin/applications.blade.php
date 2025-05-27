@@ -262,20 +262,25 @@
                                 </a>
                                 
                                 @if($application->status == 'pending')
-                                    <button onclick="approveApplication({{ $application->id }})" 
-                                        class="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-green-100 text-green-700 hover:bg-green-200">
-                                        Approve
-                                    </button>
+                                    <form action="{{ route('admin.applications.approve', $application) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to approve this application?');">
+                                        @csrf
+                                        @method('PUT')
+                                        <button type="submit" class="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-green-100 text-green-700 hover:bg-green-200">
+                                            Approve
+                                        </button>
+                                    </form>
                                     
                                     <button onclick="showRejectModal({{ $application->id }})" 
                                         class="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-red-100 text-red-700 hover:bg-red-200">
                                         Reject
                                     </button>
                                 @else
-                                    <button onclick="resendNotification({{ $application->id }})" 
-                                        class="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-blue-100 text-blue-700 hover:bg-blue-200">
-                                        Resend
-                                    </button>
+                                    <form action="{{ route('admin.applications.resend-notification', $application) }}" method="POST" class="inline" onsubmit="return confirm('Resend notification to this student?');">
+                                        @csrf
+                                        <button type="submit" class="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-blue-100 text-blue-700 hover:bg-blue-200">
+                                            Resend
+                                        </button>
+                                    </form>
                                 @endif
                             </div>
                         </td>
@@ -374,21 +379,6 @@ function confirmBulkAction() {
     return confirm(`Are you sure you want to ${action} ${selectedCount} application(s)?`);
 }
 
-// Approve Application
-function approveApplication(id) {
-    if (confirm('Are you sure you want to approve this application?')) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/admin/applications/${id}/approve`;
-        form.innerHTML = `
-            @csrf
-            @method('PUT')
-        `;
-        document.body.appendChild(form);
-        form.submit();
-    }
-}
-
 // Show Reject Modal
 function showRejectModal(id) {
     document.getElementById('rejectionModal').classList.remove('hidden');
@@ -399,18 +389,6 @@ function showRejectModal(id) {
 function closeRejectModal() {
     document.getElementById('rejectionModal').classList.add('hidden');
     document.getElementById('rejectionForm').reset();
-}
-
-// Resend Notification
-function resendNotification(id) {
-    if (confirm('Resend notification to this student?')) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/admin/applications/${id}/resend-notification`;
-        form.innerHTML = `@csrf`;
-        document.body.appendChild(form);
-        form.submit();
-    }
 }
 </script>
 @endpush
