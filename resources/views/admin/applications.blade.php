@@ -261,7 +261,7 @@
                                     View
                                 </a>
                                 
-                                @if($application->status == 'pending')
+                                    @if($application->status == 'pending')
                                     <form action="{{ route('admin.applications.approve', $application) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to approve this application?');">
                                         @csrf
                                         @method('PUT')
@@ -274,13 +274,6 @@
                                         class="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-red-100 text-red-700 hover:bg-red-200">
                                         Reject
                                     </button>
-                                @else
-                                    <form action="{{ route('admin.applications.resend-notification', $application) }}" method="POST" class="inline" onsubmit="return confirm('Resend notification to this student?');">
-                                        @csrf
-                                        <button type="submit" class="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-blue-100 text-blue-700 hover:bg-blue-200">
-                                            Resend
-                                        </button>
-                                    </form>
                                 @endif
                             </div>
                         </td>
@@ -367,16 +360,22 @@ function confirmBulkAction() {
     const selectedCount = document.querySelectorAll('.applicationCheckbox:checked').length;
     
     if (!action) {
-        alert('Please select an action');
+        alert('অনুগ্রহ করে একটি action সিলেক্ট করুন');
         return false;
     }
     
     if (selectedCount === 0) {
-        alert('Please select at least one application');
+        alert('অনুগ্রহ করে অন্তত একটি application সিলেক্ট করুন');
         return false;
     }
     
-    return confirm(`Are you sure you want to ${action} ${selectedCount} application(s)?`);
+    const confirmMessages = {
+        'approve': `আপনি কি নিশ্চিত ${selectedCount}টি application approve করতে চান?`,
+        'reject': `আপনি কি নিশ্চিত ${selectedCount}টি application reject করতে চান?`,
+        'delete': `আপনি কি নিশ্চিত ${selectedCount}টি application delete করতে চান?`
+    };
+    
+    return confirm(confirmMessages[action] || `আপনি কি নিশ্চিত ${selectedCount}টি application এর উপর ${action} করতে চান?`);
 }
 
 // Show Reject Modal

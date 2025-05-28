@@ -95,7 +95,7 @@
                     <input type="text" name="duration" value="{{ $setting->duration ?? '' }}" required
                         placeholder="e.g., 2 মাস"
                         class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
-                    <p class="text-xs text-gray-500 mt-2">কোর্সের মোট সময়কাল</p>
+                   
                 </div>
                 
                 <div class="setting-card bg-gray-50 rounded-lg p-5">
@@ -108,7 +108,7 @@
                     <input type="text" name="classes" value="{{ $setting->classes ?? '' }}" required
                         placeholder="e.g., সপ্তাহে 3 দিন"
                         class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
-                    <p class="text-xs text-gray-500 mt-2">ক্লাসের সময়সূচী</p>
+                   
                 </div>
                 
                 <div class="setting-card bg-gray-50 rounded-lg p-5">
@@ -124,7 +124,7 @@
                             placeholder="8000"
                             class="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
                     </div>
-                    <p class="text-xs text-gray-500 mt-2">কোর্স ফি (টাকায়)</p>
+                   
                 </div>
             </div>
         </div>
@@ -144,7 +144,7 @@
                     <input type="text" name="materials" value="{{ $setting->materials ?? '' }}" required
                         placeholder="e.g., Free PDF + Videos"
                         class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
-                    <p class="text-xs text-gray-500 mt-2">যা যা পাবেন</p>
+                    
                 </div>
                 
                 <div class="setting-card bg-gray-50 rounded-lg p-5">
@@ -157,7 +157,7 @@
                     <input type="text" name="mock_tests" value="{{ $setting->mock_tests ?? '' }}" required
                         placeholder="e.g., 5টি"
                         class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
-                    <p class="text-xs text-gray-500 mt-2">মক টেস্টের সংখ্যা</p>
+                    
                 </div>
             </div>
         </div>
@@ -177,7 +177,7 @@
                     <input type="text" name="contact_number" value="{{ $setting->contact_number ?? '' }}" required
                         placeholder="e.g., 01712345678"
                         class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
-                    <p class="text-xs text-gray-500 mt-2">যোগাযোগের নম্বর</p>
+                    
                 </div>
                 
                 <div class="setting-card bg-gray-50 rounded-lg p-5">
@@ -191,7 +191,7 @@
                     <input type="url" name="youtube_link" value="{{ $setting->youtube_link ?? '' }}"
                         placeholder="https://youtube.com/@channel"
                         class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
-                    <p class="text-xs text-gray-500 mt-2">YouTube channel link (optional)</p>
+                    
                 </div>
             </div>
         </div>
@@ -211,9 +211,9 @@
                     <span class="info-badge">One item per line</span>
                 </label>
                 <textarea name="additional_info" rows="6" 
-                    placeholder="Expert instructors&#10;24/7 support&#10;Certificate provided&#10;Job placement assistance"
+                    placeholder="ekta line ekti alada kichu thakle den"
                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none">{{ is_array($setting->additional_info ?? null) ? implode("\n", $setting->additional_info) : ($setting->additional_info ?? '') }}</textarea>
-                <p class="text-xs text-gray-500 mt-2">প্রতি লাইনে একটি করে feature লিখুন</p>
+                
             </div>
         </div>
 

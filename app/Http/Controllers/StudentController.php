@@ -196,11 +196,11 @@ class StudentController extends Controller
             // Update session count
             $session->increment('current_count');
 
-            // Send confirmation email
+            // Send confirmation email ONLY (No SMS for application submission)
             $this->sendApplicationEmail($student, $application);
             
-            // Send SMS notification
-            $this->sendApplicationSms($student, $application);
+            // Don't send SMS for application submission
+            // SMS will only be sent when application is approved
 
             DB::commit();
 
@@ -337,31 +337,6 @@ class StudentController extends Controller
             ]);
         }
     }
-
-    /**
-     * Send application confirmation SMS
-     */
-    private function sendApplicationSms($student, $application)
-{
-    try {
-        // Use the SMS template
-        $message = \App\Helpers\SmsTemplates::applicationSubmitted($student, $application);
-        
-        $sent = $this->smsService->send($student->phone, $message);
-        
-        if ($sent) {
-            Log::info('Application SMS sent', [
-                'student_phone' => $student->phone,
-                'application_id' => $application->id
-            ]);
-        }
-    } catch (\Exception $e) {
-        Log::error('SMS sending failed', [
-            'error' => $e->getMessage(),
-            'student_phone' => $student->phone
-        ]);
-    }
-}
 
     /**
      * Check application status (for future use)

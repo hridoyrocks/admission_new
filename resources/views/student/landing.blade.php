@@ -8,30 +8,20 @@
             <!-- Hero Section -->
             <div class="relative overflow-hidden bg-gradient-to-r from-red-600 to-red-700 text-white">
                 <div class="absolute inset-0 bg-black opacity-20"></div>
-                <div class="relative container mx-auto px-4 py-20">
+                <div class="relative container mx-auto px-3 py-20">
                     <div class="text-center">
-                        <h1 class="text-5xl font-bold mb-4 animate-fade-in"> বাংলায় IELTS প্রাইভেট ব্যাচে ভর্তি</h1>
+                        <h2 class="text-5xl font-bold mb-4 animate-fade-in"> Banglay IELTS - Online Admission</h2>
                         
                         <div class="flex justify-center items-center gap-4 mb-8">
-                            <span class="bg-white bg-opacity-20 px-4 py-2 rounded-full text-sm">
-                                <svg class="w-5 h-5 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z"/>
-                                </svg>
-                                এই কোর্সের কোন রিফান্ড নীতি নেই 
-                            </span>
+                            
                             <span class="bg-white bg-opacity-20 px-4 py-2 rounded-full text-sm">
                                 <svg class="w-5 h-5 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M10 2a8 8 0 100 16 8 8 0 000-16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd"/>
                                 </svg>
-                                {{ $activeBatch->name }} Batch
+                                {{ $activeBatch->name }} ব্যাচ
                             </span>
                         </div>
-                        <button @click="scrollToCourse" class="bg-white text-red-600 px-8 py-4 rounded-full font-semibold text-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
-                            কোর্স বিস্তারিত দেখুন
-                            <svg class="w-5 h-5 inline ml-2 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
-                            </svg>
-                        </button>
+                        
                     </div>
                 </div>
                 <div class="absolute bottom-0 left-0 right-0">
@@ -43,89 +33,64 @@
 
             <!-- Features Section -->
             <div class="container mx-auto px-4 py-16">
-                <div class="grid md:grid-cols-3 gap-8 mb-16">
-                    <div class="text-center transform hover:scale-105 transition-all duration-300">
-                        
-                       
-                    </div>
+                
 
-                    <div class="text-center transform hover:scale-105 transition-all duration-300">
-                        
-                      
-                    </div>
-
-                    <div class="text-center transform hover:scale-105 transition-all duration-300">
-                        
-                        
-                    </div>
-                </div>
-
-             <!-- Course Details Card -->
-<div id="course-details" class="max-w-3xl mx-auto">
-    <div class="bg-white rounded-2xl shadow-lg border border-red-100 overflow-hidden">
-        <!-- Header -->
-        <div class="bg-gradient-to-r from-rose-500 to-pink-500 p-6 text-black text-center">
-            <h2 class="text-2xl font-bold">কোর্স বিস্তারিত</h2>
+<!-- Course Details Card -->
+<div id="course-details" class="max-w-2xl mx-auto">
+    <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+        <!-- Admission Deadline Banner -->
+        @if($activeBatch && $activeBatch->start_date)
+        <div class="bg-gradient-to-r from-red-600 to-red-700 p-3 text-white text-center">
+            <p class="text-sm font-medium flex items-center justify-center gap-2">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                </svg>
+                ভর্তির শেষ সময়: {{ $activeBatch->start_date->subDays(3)->format('d M, Y') }}
+            </p>
         </div>
+        @endif
         
         <div class="p-8">
-            <!-- Course Info List -->
-            <div class="space-y-5 mb-8">
-                <div class="flex items-center">
-                    <div class="w-3 h-3 bg-rose-500 rounded-full mr-4 flex-shrink-0"></div>
-                    <span class="text-gray-800 text-lg">
-                        <span class="font-semibold">মেয়াদ:</span>
-                        <span class="ml-2 font-medium">{{ $courseSetting->duration ?? '2 মাস' }}</span>
-                    </span>
+            <!-- Minimal Course Info -->
+            <div class="text-center mb-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">বাংলায় IELTS প্রাইভেট ব্যাচ</h2>
+                <p class="text-gray-600">{{ $courseSetting->duration ?? '2 মাস' }} • {{ $courseSetting->classes ?? 'সপ্তাহে 3 দিন' }}</p>
+            </div>
+            
+            <!-- Price -->
+            <div class="text-center mb-8">
+                <div class="text-5xl font-bold text-gray-900">৳{{ number_format($courseSetting->fee ?? 0) }}</div>
+                <p class="text-gray-500 mt-2">সম্পূর্ণ কোর্স ফি</p>
+            </div>
+            
+            <!-- What's Included -->
+            <div class="flex justify-center gap-8 mb-8 text-sm text-gray-600">
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                    <span>{{ $courseSetting->materials ?? 'Study Materials' }}</span>
                 </div>
-                
-                <div class="flex items-center">
-                    <div class="w-3 h-3 bg-rose-500 rounded-full mr-4 flex-shrink-0"></div>
-                    <span class="text-gray-800 text-lg">
-                        <span class="font-semibold">ক্লাস সময়সূচী:</span>
-                        <span class="ml-2 font-medium">{{ $courseSetting->classes ?? 'সপ্তাহে 3 দিন' }}</span>
-                    </span>
-                </div>
-                
-                <div class="flex items-center">
-                    <div class="w-3 h-3 bg-rose-500 rounded-full mr-4 flex-shrink-0"></div>
-                    <span class="text-gray-800 text-lg">
-                        <span class="font-semibold">স্টাডি ম্যাটেরিয়াল:</span>
-                        <span class="ml-2 font-medium">{{ $courseSetting->materials ?? 'Free PDF + Videos' }}</span>
-                    </span>
-                </div>
-                
-                <div class="flex items-center">
-                    <div class="w-3 h-3 bg-rose-500 rounded-full mr-4 flex-shrink-0"></div>
-                    <span class="text-gray-800 text-lg">
-                        <span class="font-semibold">প্ল্যাটফর্ম:</span>
-                        <span class="ml-2 font-medium">{{ $courseSetting->mock_tests ?? '5টি' }}</span>
-                    </span>
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                    <span>{{ $courseSetting->mock_tests ?? 'Mock Tests' }}</span>
                 </div>
             </div>
             
-            <!-- Price and CTA -->
-            <div class="bg-red-50 rounded-xl p-8 text-center">
-                <div class="mb-6">
-                    <span class="text-gray-700 text-lg">কোর্স ফি</span>
-                    <div class="text-4xl font-bold text-rose-600 mt-2">৳{{ number_format($courseSetting->fee ?? 0) }}</div>
-                </div>
-                
-                <button @click="startAdmission" class="bg-gradient-to-r from-rose-500 to-pink-500 text-red px-10 py-4 rounded-full font-bold text-lg hover:shadow-lg transition-all duration-300 transform hover:scale-105">
-                    এখনই ভর্তি হন
-                </button>
-                
-                <p class="text-base text-red-600 mt-4 font-semibold flex items-center justify-center">
-                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                    </svg>
-                    কোন রিফান্ড নীতি নেই
-                </p>
-            </div>
+            <!-- CTA Button -->
+            <button @click="startAdmission" class="w-full bg-red-600 text-white py-4 rounded-lg font-semibold text-lg hover:bg-red-700 transition-all duration-300">
+                ভর্তি প্রক্রিয়া শুরু করুন
+            </button>
+            
+            <!-- Refund Policy Note -->
+            <p class="text-center text-sm text-gray-500 mt-4">
+                কোর্স ফি ফেরতযোগ্য নয়
+            </p>
         </div>
     </div>
 </div>
-
                 <!-- Contact Section -->
                 
             </div>

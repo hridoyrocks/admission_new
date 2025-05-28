@@ -26,10 +26,10 @@ class SmsTemplates
     {
         $message = "অভিনন্দন {$student->name}!\n";
         $message .= "আপনার IELTS কোর্স এডমিশন কনফার্ম হয়েছে।\n";
-        $message .= "Batch: {$application->batch->name}\n";
+        $message .= "Class starts: {$application->batch->start_date->format('d M Y')}\n";
         $message .= "Time: " . ($student->classSession->time ?? 'N/A') . "\n";
         $message .= "Days: " . ($student->classSession->days ?? 'N/A') . "\n";
-        $message .= "Class starts: {$application->batch->start_date->format('d M Y')}\n";
+        
         $message .= "Contact: {$courseSetting->contact_number}";
         
         return $message;

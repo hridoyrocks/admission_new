@@ -66,7 +66,7 @@
              class="fixed inset-y-0 left-0 w-64 bg-white shadow-xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 z-50">
             
             <!-- Logo Section -->
-            <div class="h-20 flex items-center justify-center border-b border-gray-200 bg-gradient-to-r from-blue-600 to-purple-600">
+            <div class="h-20 flex items-center justify-center border-b border-gray-200 bg-gradient-to-r from-red-600 to-red-600">
                 <h2 class="text-2xl font-bold text-white">Banglay IELTS</h2>
             </div>
             
