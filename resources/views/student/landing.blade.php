@@ -127,28 +127,7 @@
 </div>
 
                 <!-- Contact Section -->
-                <div class="text-center mt-16">
-                    <h3 class="text-2xl font-semibold mb-4">Need Help?</h3>
-                    <p class="text-gray-600 mb-6">Our admission team is ready to assist you</p>
-                    <div class="flex justify-center items-center gap-6">
-                        @if($courseSetting->contact_number)
-                        <a href="tel:{{ $courseSetting->contact_number }}" class="inline-flex items-center text-blue-600 hover:text-blue-700">
-                            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/>
-                            </svg>
-                            {{ $courseSetting->contact_number }}
-                        </a>
-                        @endif
-                        @if($courseSetting->youtube_link)
-                        <a href="{{ $courseSetting->youtube_link }}" target="_blank" class="inline-flex items-center text-red-600 hover:text-red-700">
-                            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
-                            </svg>
-                            YouTube Channel
-                        </a>
-                        @endif
-                    </div>
-                </div>
+                
             </div>
         </div>
 
@@ -274,16 +253,16 @@
                                     </div>
                                 </div>
 
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">লিসেনিং এবং রিডিং এ ৪০ টায় কয়টা কারেক্ট হয়?</label>
-                                    <select v-model="form.score" @change="updateClassTime" required 
-                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
-                                        <option value="">Select Score</option>
-                                        @for($i = 0; $i <= 40; $i++)
-                                            <option value="{{ $i }}">{{ $i }} out of 40</option>
-                                        @endfor
-                                    </select>
-                                </div>
+                               <div>
+    <label class="block text-sm font-medium text-gray-700 mb-1">লিসেনিং এবং রিডিং এ ৪০ টায় কয়টা কারেক্ট হয়?</label>
+    <select v-model="form.score" @change="updateClassTime" required 
+        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+        <option value="">Select Score</option>
+        @for($i = 0; $i <= 40; $i += 5)
+            <option value="{{ $i }}">{{ $i }} out of 40</option>
+        @endfor
+    </select>
+</div>
                             </div>
                         </div>
 

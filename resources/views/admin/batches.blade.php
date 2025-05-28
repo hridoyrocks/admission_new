@@ -7,15 +7,43 @@
 <!-- Create New Batch -->
 <div class="bg-white shadow-md rounded-lg p-6 mb-6">
     <h2 class="text-xl font-semibold mb-4">Create New Batch</h2>
-    <form action="{{ route('admin.batches.create') }}" method="POST" class="flex gap-4">
+    <form action="{{ route('admin.batches.create') }}" method="POST" id="createBatchForm">
         @csrf
-        <input type="text" name="name" placeholder="Batch Name (e.g., February 2025)" required
-            class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-        <input type="date" name="start_date" required
-            class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-        <button type="submit" class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700">
-            Create Batch
-        </button>
+        <div class="space-y-4">
+            <!-- Batch Info -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Batch Name</label>
+                    <input type="text" name="name" placeholder="Batch Name den ekhane" required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                    <input type="date" name="start_date" required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+            </div>
+            
+            <!-- Class Sessions -->
+            <div class="border-t pt-4">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-semibold text-gray-700">Class Sessions</h3>
+                    <button type="button" onclick="addSession()" class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700">
+                        + Add Session
+                    </button>
+                </div>
+                
+                <div id="sessionsContainer" class="space-y-3">
+                    <!-- Sessions will be added here -->
+                </div>
+                
+                
+            </div>
+            
+            <button type="submit" class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 w-full md:w-auto">
+                Create Batch
+            </button>
+        </div>
     </form>
 </div>
 
@@ -69,4 +97,60 @@
         </tbody>
     </table>
 </div>
+
+<script>
+let sessionCount = 0;
+
+// Add initial session on page load
+document.addEventListener('DOMContentLoaded', function() {
+    addSession();
+});
+
+function addSession() {
+    sessionCount++;
+    const container = document.getElementById('sessionsContainer');
+    const sessionDiv = document.createElement('div');
+    sessionDiv.className = 'border p-4 rounded-lg bg-gray-50 relative';
+    sessionDiv.id = `session-${sessionCount}`;
+    
+    sessionDiv.innerHTML = `
+        <div class="absolute top-2 right-2">
+            ${sessionCount > 1 ? `<button type="button" onclick="removeSession(${sessionCount})" class="text-red-600 hover:text-red-800">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>` : ''}
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Session Name</label>
+                <input type="text" name="sessions[${sessionCount}][session_name]" 
+                    placeholder="e.g., Morning Session" required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                <input type="text" name="sessions[${sessionCount}][time]" 
+                    placeholder="e.g., 8:00 AM" required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Days</label>
+                <input type="text" name="sessions[${sessionCount}][days]" 
+                    placeholder="e.g., Sunday, Tuesday, Thursday" required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+            </div>
+        </div>
+    `;
+    
+    container.appendChild(sessionDiv);
+}
+
+function removeSession(id) {
+    const session = document.getElementById(`session-${id}`);
+    if (session) {
+        session.remove();
+    }
+}
+</script>
 @endsection
