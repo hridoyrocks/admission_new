@@ -59,6 +59,54 @@
         font-size: 0.875rem;
     }
 </style>
+
+<!-- CSS for the switch -->
+<style>
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #2196F3;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+</style>
 @endpush
 
 @section('content')
@@ -146,19 +194,20 @@
             @csrf
             @method('PUT')
             
-            <!-- Toggle Switch -->
-            <div class="mb-6 flex items-center justify-between bg-gray-50 rounded-lg p-4">
-                <div>
-                    <label class="font-medium text-gray-700 block">Assignment Method</label>
-                    <p class="text-xs text-gray-500">Fixed time or score-based</p>
-                </div>
-                <label class="switch">
-                    <input type="checkbox" name="is_fixed" value="1" 
-                        {{ $condition->is_fixed ? 'checked' : '' }}
-                        onchange="toggleMethod{{ $condition->id }}(this.checked)">
-                    <span class="slider"></span>
-                </label>
-            </div>
+           <!-- Toggle Switch Section - Updated -->
+<div class="mb-6 flex items-center justify-between bg-gray-50 rounded-lg p-4">
+    <div>
+        <label class="font-medium text-gray-700 block">Assignment Method</label>
+        <p class="text-xs text-gray-500">Fixed time or score-based</p>
+    </div>
+    <label class="switch">
+        <input type="checkbox" name="is_fixed" value="1" 
+            {{ $condition->is_fixed ? 'checked' : '' }}
+            onchange="toggleMethod{{ $condition->id }}(this.checked)"
+            id="isFixedToggle{{ $condition->id }}">
+        <span class="slider"></span>
+    </label>
+</div>
             
             <!-- Fixed Time Input -->
             <div id="fixedTime{{ $condition->id }}" class="{{ !$condition->is_fixed ? 'hidden' : '' }} transition-all duration-300">
@@ -284,89 +333,101 @@
     </div>
     
     <script>
-        let ruleCount{{ $condition->id }} = {{ $condition->score_rules ? count($condition->score_rules) : 0 }};
+    let ruleCount{{ $condition->id }} = {{ $condition->score_rules ? count($condition->score_rules) : 0 }};
+    
+    function toggleMethod{{ $condition->id }}(isFixed) {
+        const fixedDiv = document.getElementById('fixedTime{{ $condition->id }}');
+        const rulesDiv = document.getElementById('scoreRules{{ $condition->id }}');
+        const hiddenInput = document.getElementById('isFixedHidden{{ $condition->id }}');
+        const toggleInput = document.getElementById('isFixedToggle{{ $condition->id }}');
         
-        function toggleMethod{{ $condition->id }}(isFixed) {
-            const fixedDiv = document.getElementById('fixedTime{{ $condition->id }}');
-            const rulesDiv = document.getElementById('scoreRules{{ $condition->id }}');
-            
-            if(isFixed) {
-                fixedDiv.classList.remove('hidden');
-                rulesDiv.classList.add('hidden');
-            } else {
-                fixedDiv.classList.add('hidden');
-                rulesDiv.classList.remove('hidden');
-            }
+        if(isFixed) {
+            fixedDiv.classList.remove('hidden');
+            rulesDiv.classList.add('hidden');
+            hiddenInput.value = '1';
+            toggleInput.value = '1';
+        } else {
+            fixedDiv.classList.add('hidden');
+            rulesDiv.classList.remove('hidden');
+            hiddenInput.value = '0';
+            toggleInput.value = '0';
         }
+    }
+    
+    // Initialize the toggle state on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const isChecked = document.getElementById('isFixedToggle{{ $condition->id }}').checked;
+        toggleMethod{{ $condition->id }}(isChecked);
+    });
+    
+    function setFixedTime{{ $condition->id }}(time) {
+        document.getElementById('fixedTimeInput{{ $condition->id }}').value = time;
+    }
+    
+    function setScoreTime{{ $condition->id }}(index, time) {
+        document.getElementById('scoreTimeInput{{ $condition->id }}_' + index).value = time;
+    }
+    
+    function addScoreRule{{ $condition->id }}() {
+        const container = document.getElementById('rulesContainer{{ $condition->id }}');
+        const newRule = document.createElement('div');
+        newRule.className = 'score-rule-item rounded-lg p-3 border';
+        newRule.id = `rule{{ $condition->id }}_${ruleCount{{ $condition->id }}}`;
         
-        function setFixedTime{{ $condition->id }}(time) {
-            document.getElementById('fixedTimeInput{{ $condition->id }}').value = time;
-        }
-        
-        function setScoreTime{{ $condition->id }}(index, time) {
-            document.getElementById('scoreTimeInput{{ $condition->id }}_' + index).value = time;
-        }
-        
-        function addScoreRule{{ $condition->id }}() {
-            const container = document.getElementById('rulesContainer{{ $condition->id }}');
-            const newRule = document.createElement('div');
-            newRule.className = 'score-rule-item rounded-lg p-3 border';
-            newRule.id = `rule{{ $condition->id }}_${ruleCount{{ $condition->id }}}`;
-            
-            newRule.innerHTML = `
-                <div class="grid grid-cols-7 gap-2 items-end">
-                    <div>
-                        <label class="text-xs text-gray-500">Min</label>
-                        <input type="number" 
-                            name="score_rules[${ruleCount{{ $condition->id }}}][min_score]" 
-                            min="0" max="40" 
-                            class="w-full px-2 py-1 border rounded text-center text-sm">
-                    </div>
-                    <div>
-                        <label class="text-xs text-gray-500">Max</label>
-                        <input type="number" 
-                            name="score_rules[${ruleCount{{ $condition->id }}}][max_score]" 
-                            min="0" max="40" 
-                            class="w-full px-2 py-1 border rounded text-center text-sm">
-                    </div>
-                    <div class="col-span-4">
-                        <label class="text-xs text-gray-500">Time</label>
-                        <input type="text" 
-                            name="score_rules[${ruleCount{{ $condition->id }}}][time]" 
-                            placeholder="Select time" 
-                            class="w-full px-2 py-1 border rounded text-sm"
-                            id="scoreTimeInput{{ $condition->id }}_${ruleCount{{ $condition->id }}}">
-                        <div class="flex flex-wrap gap-1 mt-1">
-                            @foreach($availableTimes as $timeOption)
-                                <button type="button" 
-                                    onclick="setScoreTime{{ $condition->id }}(${ruleCount{{ $condition->id }}}, '{{ $timeOption['time'] }}')"
-                                    class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-1 py-0.5 rounded">
-                                    {{ explode(' ', $timeOption['time'])[1] ?? $timeOption['time'] }}
-                                </button>
-                            @endforeach
-                        </div>
-                    </div>
-                    <div class="text-center">
-                        <button type="button" 
-                            onclick="removeScoreRule{{ $condition->id }}(${ruleCount{{ $condition->id }}})"
-                            class="text-red-500 hover:text-red-700 transition p-1">
-                            <i class="fas fa-trash text-xs"></i>
-                        </button>
+        newRule.innerHTML = `
+            <div class="grid grid-cols-7 gap-2 items-end">
+                <div>
+                    <label class="text-xs text-gray-500">Min</label>
+                    <input type="number" 
+                        name="score_rules[${ruleCount{{ $condition->id }}}][min_score]" 
+                        min="0" max="40" 
+                        class="w-full px-2 py-1 border rounded text-center text-sm">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500">Max</label>
+                    <input type="number" 
+                        name="score_rules[${ruleCount{{ $condition->id }}}][max_score]" 
+                        min="0" max="40" 
+                        class="w-full px-2 py-1 border rounded text-center text-sm">
+                </div>
+                <div class="col-span-4">
+                    <label class="text-xs text-gray-500">Time</label>
+                    <input type="text" 
+                        name="score_rules[${ruleCount{{ $condition->id }}}][time]" 
+                        placeholder="Select time" 
+                        class="w-full px-2 py-1 border rounded text-sm"
+                        id="scoreTimeInput{{ $condition->id }}_${ruleCount{{ $condition->id }}}">
+                    <div class="flex flex-wrap gap-1 mt-1">
+                        @foreach($availableTimes as $timeOption)
+                            <button type="button" 
+                                onclick="setScoreTime{{ $condition->id }}(${ruleCount{{ $condition->id }}}, '{{ $timeOption['time'] }}')"
+                                class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-1 py-0.5 rounded">
+                                {{ explode(' ', $timeOption['time'])[1] ?? $timeOption['time'] }}
+                            </button>
+                        @endforeach
                     </div>
                 </div>
-            `;
-            
-            container.appendChild(newRule);
-            ruleCount{{ $condition->id }}++;
-        }
+                <div class="text-center">
+                    <button type="button" 
+                        onclick="removeScoreRule{{ $condition->id }}(${ruleCount{{ $condition->id }}})"
+                        class="text-red-500 hover:text-red-700 transition p-1">
+                        <i class="fas fa-trash text-xs"></i>
+                    </button>
+                </div>
+            </div>
+        `;
         
-        function removeScoreRule{{ $condition->id }}(index) {
-            const rule = document.getElementById(`rule{{ $condition->id }}_${index}`);
-            if(rule) {
-                rule.remove();
-            }
+        container.appendChild(newRule);
+        ruleCount{{ $condition->id }}++;
+    }
+    
+    function removeScoreRule{{ $condition->id }}(index) {
+        const rule = document.getElementById(`rule{{ $condition->id }}_${index}`);
+        if(rule) {
+            rule.remove();
         }
-    </script>
+    }
+</script>
     @endforeach
 </div>
 

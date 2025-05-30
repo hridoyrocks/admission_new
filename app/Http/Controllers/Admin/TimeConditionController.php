@@ -29,7 +29,24 @@ class TimeConditionController extends Controller
 
     public function update(Request $request, TimeCondition $condition)
     {
-        $validatedData = $this->validateTimeCondition($request);
+        // আগে check করি যে is_fixed field আছে কিনা
+        $isFixed = $request->has('is_fixed') && $request->input('is_fixed') == '1';
+        
+        // Validation rules based on is_fixed value
+        if ($isFixed) {
+            $validatedData = $request->validate([
+                'fixed_time' => 'required|string|max:255'
+            ]);
+            $validatedData['is_fixed'] = true;
+        } else {
+            $validatedData = $request->validate([
+                'score_rules' => 'required|array|min:1',
+                'score_rules.*.min_score' => 'required|integer|min:0|max:40',
+                'score_rules.*.max_score' => 'required|integer|min:0|max:40',
+                'score_rules.*.time' => 'required|string|max:255'
+            ]);
+            $validatedData['is_fixed'] = false;
+        }
         
         DB::beginTransaction();
         
@@ -80,7 +97,8 @@ class TimeConditionController extends Controller
             
             Log::error('Time condition update failed', [
                 'condition_id' => $condition->id,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'request_data' => $request->all()
             ]);
             
             return redirect()->back()->with('error', 'Failed to update: ' . $e->getMessage());
@@ -278,27 +296,6 @@ class TimeConditionController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
             return redirect()->back()->with('error', 'Sync failed: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Validate time condition request
-     */
-    private function validateTimeCondition(Request $request)
-    {
-        if ($request->input('is_fixed')) {
-            return $request->validate([
-                'is_fixed' => 'boolean',
-                'fixed_time' => 'required|string|max:255'
-            ]);
-        } else {
-            return $request->validate([
-                'is_fixed' => 'boolean',
-                'score_rules' => 'required|array|min:1',
-                'score_rules.*.min_score' => 'required|integer|min:0|max:40',
-                'score_rules.*.max_score' => 'required|integer|min:0|max:40',
-                'score_rules.*.time' => 'required|string|max:255'
-            ]);
         }
     }
 
