@@ -75,70 +75,241 @@ class StudentController extends Controller
         ]);
         
         $profession = $request->input('profession');
-        $score = $request->input('score');
+        $score = (int) $request->input('score');
         
-        // Get active batch
-        $activeBatch = Batch::where('is_active', true)->with('classSessions')->first();
-        
-        if (!$activeBatch) {
-            return response()->json(['error' => 'No active batch found'], 404);
-        }
-        
-        $condition = TimeCondition::where('profession', $profession)->first();
-        
-        if (!$condition) {
-            Log::error('Time condition not found for profession: ' . $profession);
-            return response()->json(['error' => 'No time condition found'], 404);
-        }
-        
-        $targetTime = '';
-        
-        if ($condition->is_fixed) {
-            $targetTime = $condition->fixed_time;
-        } else {
-            foreach ($condition->score_rules as $rule) {
-                if ($score >= $rule['min_score'] && $score <= $rule['max_score']) {
-                    $targetTime = $rule['time'];
-                    break;
+        try {
+            // Get active batch
+            $activeBatch = Batch::where('is_active', true)->with('classSessions')->first();
+            
+            if (!$activeBatch) {
+                Log::error('No active batch found for class time assignment');
+                return response()->json(['error' => 'No active batch found'], 404);
+            }
+            
+            // Get time condition for profession
+            $condition = TimeCondition::where('profession', $profession)->first();
+            
+            if (!$condition) {
+                Log::error('Time condition not found for profession: ' . $profession);
+                return $this->getFallbackTimeResponse($profession, $score, $activeBatch);
+            }
+            
+            $targetTime = '';
+            $assignmentMethod = '';
+            
+            if ($condition->is_fixed) {
+                $targetTime = $condition->fixed_time;
+                $assignmentMethod = 'Fixed time for ' . str_replace('_', ' ', $profession);
+            } else {
+                // Score-based assignment
+                if ($condition->score_rules && is_array($condition->score_rules)) {
+                    $ruleFound = false;
+                    
+                    foreach ($condition->score_rules as $rule) {
+                        if (isset($rule['min_score'], $rule['max_score'], $rule['time'])) {
+                            if ($score >= $rule['min_score'] && $score <= $rule['max_score']) {
+                                $targetTime = $rule['time'];
+                                $assignmentMethod = "Score-based ({$rule['min_score']}-{$rule['max_score']} range)";
+                                $ruleFound = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // If no rule matches, use first available rule
+                    if (!$ruleFound && !empty($condition->score_rules)) {
+                        $firstRule = $condition->score_rules[0];
+                        $targetTime = $firstRule['time'] ?? 'Evening 7:00 PM';
+                        $assignmentMethod = 'Fallback to first rule (no matching range)';
+                        
+                        Log::warning('No matching score rule found', [
+                            'profession' => $profession,
+                            'score' => $score,
+                            'available_rules' => $condition->score_rules
+                        ]);
+                    }
+                } else {
+                    return $this->getFallbackTimeResponse($profession, $score, $activeBatch, 'No score rules configured');
                 }
             }
-        }
-        
-        // Find matching session in active batch
-        $matchingSession = $activeBatch->classSessions()
-            ->where('time', $targetTime)
-            ->first();
-        
-        if ($matchingSession) {
+            
+            // Find exact matching session
+            $matchingSession = $this->findMatchingSession($activeBatch, $targetTime);
+            
+            // If no session found, this indicates a sync issue
+            if (!$matchingSession) {
+                Log::warning('Time condition and session mismatch detected', [
+                    'target_time' => $targetTime,
+                    'profession' => $profession,
+                    'batch_id' => $activeBatch->id
+                ]);
+                
+                // Create the missing session to maintain sync
+                $matchingSession = $this->createMissingSession($activeBatch, $targetTime, $profession);
+                $assignmentMethod .= ' (session auto-created for sync)';
+            }
+            
+            // Log successful assignment
+            Log::info('Class time assigned successfully', [
+                'profession' => $profession,
+                'score' => $score,
+                'assigned_time' => $matchingSession->time,
+                'assignment_method' => $assignmentMethod,
+                'session_id' => $matchingSession->id
+            ]);
+            
             return response()->json([
                 'time' => $matchingSession->time,
                 'days' => $matchingSession->days,
                 'session_name' => $matchingSession->session_name,
-                'message' => 'Time assigned based on your profile'
+                'message' => $assignmentMethod,
+                'profession' => ucfirst(str_replace('_', ' ', $profession)),
+                'score' => $score,
+                'batch_name' => $activeBatch->name,
+                'session_id' => $matchingSession->id
             ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Class time assignment failed', [
+                'error' => $e->getMessage(),
+                'profession' => $profession,
+                'score' => $score,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // Return fallback response
+            return $this->getFallbackTimeResponse($profession, $score, null, 'System error');
+        }
+    }
+
+    /**
+     * Find matching session with flexible matching
+     */
+    private function findMatchingSession($batch, $targetTime)
+    {
+        // Try exact match first
+        $session = $batch->classSessions()
+            ->where('time', $targetTime)
+            ->first();
+            
+        if ($session) {
+            return $session;
         }
         
-        // If no exact match, get the first available session
-        $defaultSession = $activeBatch->classSessions()->first();
-        
-        if ($defaultSession) {
-            return response()->json([
-                'time' => $defaultSession->time,
-                'days' => $defaultSession->days,
-                'session_name' => $defaultSession->session_name,
-                'message' => 'Default session assigned'
-            ]);
+        // Try case-insensitive match
+        $session = $batch->classSessions()
+            ->whereRaw('LOWER(time) = LOWER(?)', [$targetTime])
+            ->first();
+            
+        if ($session) {
+            return $session;
         }
         
-        // Fallback if no sessions exist
+        // Try partial match (extract time part)
+        $timePattern = $this->extractTimeFromString($targetTime);
+        $session = $batch->classSessions()
+            ->where('time', 'LIKE', '%' . $timePattern . '%')
+            ->first();
+            
+        return $session;
+    }
+
+    /**
+     * Create missing session to maintain sync
+     */
+    private function createMissingSession($batch, $targetTime, $profession)
+    {
+        $sessionData = [
+            'batch_id' => $batch->id,
+            'session_name' => $this->generateSessionName($targetTime, $profession),
+            'time' => $targetTime,
+            'days' => $this->getClassDays($profession),
+            'current_count' => 0
+        ];
+
+        $session = ClassSession::create($sessionData);
+        
+        Log::info('Missing session created for sync', [
+            'session_id' => $session->id,
+            'time' => $targetTime,
+            'profession' => $profession,
+            'batch_id' => $batch->id
+        ]);
+        
+        return $session;
+    }
+
+    /**
+     * Generate session name based on time and profession
+     */
+    private function generateSessionName($time, $profession)
+    {
+        $timeUpper = strtoupper($time);
+        
+        if (strpos($timeUpper, 'MORNING') !== false || strpos($timeUpper, 'AM') !== false) {
+            if ($profession === 'student') {
+                return 'Student Morning Session';
+            } elseif ($profession === 'housewife') {
+                return 'Housewife Morning Session';
+            } else {
+                return 'Morning Session';
+            }
+        } elseif (strpos($timeUpper, 'EVENING') !== false || strpos($timeUpper, 'PM') !== false) {
+            if (strpos($timeUpper, '6:00') !== false || strpos($timeUpper, '6PM') !== false) {
+                return 'Evening Session A (Beginners)';
+            } elseif (strpos($timeUpper, '7:00') !== false || strpos($timeUpper, '7PM') !== false) {
+                return 'Evening Session B (Intermediate)';
+            } elseif (strpos($timeUpper, '8:00') !== false || strpos($timeUpper, '8PM') !== false) {
+                return 'Evening Session C (Advanced)';
+            } else {
+                return 'Evening Session';
+            }
+        } else {
+            return 'Custom Session';
+        }
+    }
+
+    /**
+     * Get fallback time response
+     */
+    private function getFallbackTimeResponse($profession, $score, $batch = null, $reason = 'Configuration not found')
+    {
+        $fallbackTimes = [
+            'student' => 'Morning 8:00 AM',
+            'job_holder' => 'Evening 7:00 PM',
+            'housewife' => 'Morning 10:00 AM'
+        ];
+        
+        $fallbackDays = [
+            'student' => 'Sunday, Tuesday, Thursday',
+            'job_holder' => 'Sunday, Tuesday, Thursday', 
+            'housewife' => 'Monday, Wednesday, Friday'
+        ];
+        
+        $time = $fallbackTimes[$profession] ?? 'Evening 7:00 PM';
+        $days = $fallbackDays[$profession] ?? 'Sunday, Tuesday, Thursday';
+        
         return response()->json([
-            'time' => 'Evening 7:00 PM',
-            'days' => 'Sunday, Tuesday, Thursday',
-            'session_name' => 'General Session',
-            'message' => 'Default time assigned'
+            'time' => $time,
+            'days' => $days,
+            'session_name' => 'Default Session',
+            'message' => 'Default time assigned (' . $reason . ')',
+            'profession' => ucfirst(str_replace('_', ' ', $profession)),
+            'score' => $score,
+            'batch_name' => $batch ? $batch->name : 'Default Batch'
         ]);
     }
 
+    /**
+     * Extract time from string (e.g., "Morning 8:00 AM" -> "8:00 AM")
+     */
+    private function extractTimeFromString($timeString)
+    {
+        if (preg_match('/(\d{1,2}:\d{2}\s*(AM|PM))/i', $timeString, $matches)) {
+            return $matches[1];
+        }
+        return $timeString;
+    }
     /**
      * Submit new application
      */

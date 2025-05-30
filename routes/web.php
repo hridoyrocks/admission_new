@@ -37,7 +37,8 @@ Route::prefix('admin')->group(function () {
         Route::put('/batches/{batch}/close', [BatchController::class, 'close'])->name('admin.batches.close');
         Route::put('/batches/{batch}/reactivate', [BatchController::class, 'reactivate'])->name('admin.batches.reactivate'); // New route
         Route::delete('/batches/{batch}', [BatchController::class, 'destroy'])->name('admin.batches.destroy'); // New route 
-        // Class Sessions Management - NEW ROUTES
+        
+        // Class Sessions Management
         Route::get('/class-sessions', [ClassSessionController::class, 'index'])->name('admin.class.sessions');
         Route::post('/class-sessions', [ClassSessionController::class, 'store'])->name('admin.class.sessions.store');
         Route::get('/class-sessions/{session}', [ClassSessionController::class, 'show'])->name('admin.class.sessions.show');
@@ -52,6 +53,7 @@ Route::prefix('admin')->group(function () {
         Route::get('/applications/{application}', [ApplicationController::class, 'show'])->name('admin.applications.show');
         Route::post('/applications/bulk-action', [ApplicationController::class, 'bulkAction'])->name('admin.applications.bulk-action');
         Route::post('/applications/{application}/resend-notification', [ApplicationController::class, 'resendNotification'])->name('admin.applications.resend-notification');
+        
         // Payment Methods
         Route::get('/payment-methods', [PaymentMethodController::class, 'index'])->name('admin.payment.methods');
         Route::post('/payment-methods', [PaymentMethodController::class, 'store'])->name('admin.payment.methods.store');
@@ -61,6 +63,7 @@ Route::prefix('admin')->group(function () {
         // Time Conditions
         Route::get('/time-conditions', [TimeConditionController::class, 'index'])->name('admin.time.conditions');
         Route::put('/time-conditions/{condition}', [TimeConditionController::class, 'update'])->name('admin.time.conditions.update');
+        Route::post('/time-conditions/sync', [TimeConditionController::class, 'syncAllTimesWithSessions'])->name('admin.time.conditions.sync');
     });
 });
 
