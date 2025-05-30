@@ -75,10 +75,7 @@
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>Application Received</h1>
-            <p>Thank you for applying to our IELTS preparation course</p>
-        </div>
+        
         
         <div class="content">
             <h2>Dear {{ $studentName }},</h2>
@@ -132,29 +129,7 @@
                 </table>
             </div>
             
-            <div class="timeline">
-                <h3>📌 What Happens Next?</h3>
-                <div class="timeline-item">
-                    <div class="timeline-icon">1</div>
-                    <div class="timeline-content">
-                        <strong>Payment Verification</strong>
-                        <p style="margin: 5px 0; color: #666;">We will verify your payment details</p>
-                    </div>
-                </div>
-                <div class="timeline-item">
-                    <div class="timeline-icon">2</div>
-                    <div class="timeline-content">
-                        <strong>Application Review</strong>
-                        <p style="margin: 5px 0; color: #666;">Our team will review your application</p>
-                    </div>
-                </div>
-                <div class="timeline-item">
-                    <div class="timeline-icon">3</div>
-                    <div class="timeline-content">
-                        <strong>Confirmation Email</strong>
-                        <p style="margin: 5px 0; color: #666;">You'll receive confirmation within 24 hours</p>
-                    </div>
-                </div>
+            
               
             
             <div style="background-color: #E3F2FD; padding: 20px; border-radius: 8px; margin-top: 30px;">

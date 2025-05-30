@@ -97,14 +97,31 @@
                         @endif
                     </a>
                     
-                    <!-- Batches -->
-                    <a href="{{ route('admin.batches') }}" 
-                       class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 {{ request()->routeIs('admin.batches*') ? 'active' : '' }}">
-                        <svg class="w-5 h-5 {{ request()->routeIs('admin.batches*') ? 'text-blue-600' : 'text-gray-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                        </svg>
-                        <span class="font-medium">Batch Management</span>
-                    </a>
+                  <!-- Batches -->
+<a href="{{ route('admin.batches') }}" 
+   class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 {{ request()->routeIs('admin.batches*') ? 'active' : '' }}">
+    <svg class="w-5 h-5 {{ request()->routeIs('admin.batches*') ? 'text-blue-600' : 'text-gray-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+    </svg>
+    <span class="font-medium">Batch Management</span>
+</a>
+
+<!-- Class Sessions - NEW MENU ITEM -->
+<a href="{{ route('admin.class.sessions') }}" 
+   class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 {{ request()->routeIs('admin.class.sessions*') ? 'active' : '' }}">
+    <svg class="w-5 h-5 {{ request()->routeIs('admin.class.sessions*') ? 'text-blue-600' : 'text-gray-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+    </svg>
+    <span class="font-medium">Class Sessions</span>
+    @php
+        $sessionCount = \App\Models\ClassSession::whereHas('batch', function($q) {
+            $q->where('is_active', true);
+        })->count();
+    @endphp
+    @if($sessionCount > 0)
+        <span class="ml-auto bg-green-500 text-white text-xs px-2 py-1 rounded-full">{{ $sessionCount }}</span>
+    @endif
+</a>
                     
                     <!-- Divider -->
                     <div class="my-4 border-t border-gray-200"></div>

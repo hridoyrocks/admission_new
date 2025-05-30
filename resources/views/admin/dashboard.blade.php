@@ -289,23 +289,7 @@
         </div>
 
         <!-- System Info -->
-        <div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl shadow-lg p-6 text-white">
-            <h3 class="text-lg font-semibold mb-4">সিস্টেম তথ্য</h3>
-            <div class="space-y-3 text-sm">
-                <div class="flex justify-between items-center">
-                    <span class="text-gray-300">সময়</span>
-                    <span class="font-medium">{{ now()->format('h:i A') }}</span>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-gray-300">তারিখ</span>
-                    <span class="font-medium">{{ now()->format('d M Y') }}</span>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-gray-300">দিন</span>
-                    <span class="font-medium">{{ now()->format('l') }}</span>
-                </div>
-            </div>
-        </div>
+        
     </div>
 </div>
 @endsection

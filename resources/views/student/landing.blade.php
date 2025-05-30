@@ -231,30 +231,29 @@
                             </div>
                         </div>
 
-                        <!-- Class Time Display -->
-                        <div v-if="classTime" class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg">
-                            <h3 class="font-semibold text-lg mb-3 flex items-center">
-                                <svg class="w-5 h-5 mr-2 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
-                                </svg>
-                                Your Class Schedule
-                            </h3>
-                            <div class="grid md:grid-cols-3 gap-4 text-center">
-                                <div class="bg-white p-4 rounded-lg">
-                                    <p class="text-sm text-gray-600">Batch</p>
-                                    <p class="font-semibold text-lg">{{ $activeBatch->name }}</p>
-                                </div>
-                                <div class="bg-white p-4 rounded-lg">
-                                    <p class="text-sm text-gray-600">Time</p>
-                                    <p class="font-semibold text-lg">@{{ classTime }}</p>
-                                </div>
-                                <div class="bg-white p-4 rounded-lg">
-                                    <p class="text-sm text-gray-600">Days</p>
-                                    <p class="font-semibold text-lg">Sun, Tue, Thu</p>
-                                </div>
-                            </div>
-                        </div>
-
+                      <!-- Class Time Display Section - Updated part only -->
+<div v-if="classTime" class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg">
+    <h3 class="font-semibold text-lg mb-3 flex items-center">
+        <svg class="w-5 h-5 mr-2 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+        </svg>
+        Your Class Schedule
+    </h3>
+    <div class="grid md:grid-cols-3 gap-4 text-center">
+        <div class="bg-white p-4 rounded-lg">
+            <p class="text-sm text-gray-600">Batch</p>
+            <p class="font-semibold text-lg">{{ $activeBatch->name }}</p>
+        </div>
+        <div class="bg-white p-4 rounded-lg">
+            <p class="text-sm text-gray-600">Time</p>
+            <p class="font-semibold text-lg">@{{ classTime }}</p>
+        </div>
+        <div class="bg-white p-4 rounded-lg">
+            <p class="text-sm text-gray-600">Days</p>
+            <p class="font-semibold text-lg">@{{ classDays || 'Sun, Tue, Thu' }}</p>
+        </div>
+    </div>
+</div>
                         <!-- Payment Section -->
                         <div class="bg-gray-50 rounded-lg p-6">
                             <h3 class="font-semibold text-lg mb-4 flex items-center">
@@ -499,6 +498,7 @@ createApp({
             showConfirmation: false,
             understandsYoutube: '',
             classTime: '',
+            classDays: '', // Added this for days
             selectedPaymentMethod: null,
             isSubmitting: false,
             confirmationData: {},
@@ -560,6 +560,7 @@ createApp({
                         score: this.form.score
                     });
                     this.classTime = response.data.time;
+                    this.classDays = response.data.days; // Updated to get days from response
                 } catch (error) {
                     console.error(error);
                 }

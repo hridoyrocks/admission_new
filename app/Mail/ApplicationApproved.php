@@ -30,7 +30,7 @@ class ApplicationApproved extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: '✅ IELTS Course - Admission Confirmed!',
+            subject: 'Admission Confirmed!',
         );
     }
 

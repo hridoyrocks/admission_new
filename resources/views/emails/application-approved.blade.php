@@ -130,10 +130,6 @@
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>🎉 Congratulations!</h1>
-            <p>Banglay IELTS Admission is Confirmed</p>
-        </div>
         
         <div class="content">
             <div class="success-box">
@@ -171,8 +167,7 @@
                     <li><strong>Duration:</strong> {{ $courseDuration }}</li>
                     <li><strong>Classes:</strong> {{ $courseClasses }}</li>
                     <li><strong>Course Fee:</strong> ৳{{ $courseFee }} (Paid via {{ $paymentMethod }})</li>
-                    <li><strong>Materials:</strong> {{ $courseMaterials }}</li>
-                    <li><strong>Mock Tests:</strong> {{ $mockTests }}</li>
+                    
                 </ul>
                 
                 @if($additionalInfo && count($additionalInfo) > 0)

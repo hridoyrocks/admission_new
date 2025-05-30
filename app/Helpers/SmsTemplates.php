@@ -25,12 +25,14 @@ class SmsTemplates
     public static function applicationApproved($student, $application, $courseSetting)
     {
         $message = "অভিনন্দন {$student->name}!\n";
-        $message .= "আপনার IELTS কোর্স এডমিশন কনফার্ম হয়েছে।\n";
+        $message .= "আপনার Banglay IELTS এডমিশন কনফার্ম হয়েছে।\n";
         $message .= "Class starts: {$application->batch->start_date->format('d M Y')}\n";
         $message .= "Time: " . ($student->classSession->time ?? 'N/A') . "\n";
         $message .= "Days: " . ($student->classSession->days ?? 'N/A') . "\n";
-        
-        $message .= "Contact: {$courseSetting->contact_number}";
+        if ($application->batch->start_date) {
+                    $dayBeforeClass = $application->batch->start_date->subDay()->format('d M Y');
+                    $message .= "\n আপনাকে ক্লাস শুরুর ১ দিন আগে ({$dayBeforeClass}) WhatsApp গ্রুপে এড করা হবে।\n";
+                }
         
         return $message;
     }

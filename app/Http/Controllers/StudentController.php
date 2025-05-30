@@ -77,6 +77,13 @@ class StudentController extends Controller
         $profession = $request->input('profession');
         $score = $request->input('score');
         
+        // Get active batch
+        $activeBatch = Batch::where('is_active', true)->with('classSessions')->first();
+        
+        if (!$activeBatch) {
+            return response()->json(['error' => 'No active batch found'], 404);
+        }
+        
         $condition = TimeCondition::where('profession', $profession)->first();
         
         if (!$condition) {
@@ -84,25 +91,50 @@ class StudentController extends Controller
             return response()->json(['error' => 'No time condition found'], 404);
         }
         
+        $targetTime = '';
+        
         if ($condition->is_fixed) {
-            return response()->json([
-                'time' => $condition->fixed_time,
-                'message' => 'Fixed time for ' . ucfirst(str_replace('_', ' ', $profession))
-            ]);
+            $targetTime = $condition->fixed_time;
         } else {
             foreach ($condition->score_rules as $rule) {
                 if ($score >= $rule['min_score'] && $score <= $rule['max_score']) {
-                    return response()->json([
-                        'time' => $rule['time'],
-                        'message' => 'Time based on your score'
-                    ]);
+                    $targetTime = $rule['time'];
+                    break;
                 }
             }
         }
         
-        // If no matching rule found, return default
+        // Find matching session in active batch
+        $matchingSession = $activeBatch->classSessions()
+            ->where('time', $targetTime)
+            ->first();
+        
+        if ($matchingSession) {
+            return response()->json([
+                'time' => $matchingSession->time,
+                'days' => $matchingSession->days,
+                'session_name' => $matchingSession->session_name,
+                'message' => 'Time assigned based on your profile'
+            ]);
+        }
+        
+        // If no exact match, get the first available session
+        $defaultSession = $activeBatch->classSessions()->first();
+        
+        if ($defaultSession) {
+            return response()->json([
+                'time' => $defaultSession->time,
+                'days' => $defaultSession->days,
+                'session_name' => $defaultSession->session_name,
+                'message' => 'Default session assigned'
+            ]);
+        }
+        
+        // Fallback if no sessions exist
         return response()->json([
             'time' => 'Evening 7:00 PM',
+            'days' => 'Sunday, Tuesday, Thursday',
+            'session_name' => 'General Session',
             'message' => 'Default time assigned'
         ]);
     }
@@ -141,7 +173,7 @@ class StudentController extends Controller
         
         try {
             // Get active batch
-            $activeBatch = Batch::where('is_active', true)->first();
+            $activeBatch = Batch::where('is_active', true)->with('classSessions')->first();
             
             if (!$activeBatch || $activeBatch->status !== 'open') {
                 return response()->json([
@@ -149,21 +181,9 @@ class StudentController extends Controller
                 ], 400);
             }
 
-            // Determine class time based on profession and score
-            $classTime = $this->determineClassTime($validated['profession'], $validated['score']);
+            // Determine class session based on profession and score
+            $sessionInfo = $this->determineClassSession($validated['profession'], $validated['score'], $activeBatch);
             
-            // Find or create session
-            $session = ClassSession::firstOrCreate(
-                [
-                    'batch_id' => $activeBatch->id,
-                    'time' => $classTime['time']
-                ],
-                [
-                    'session_name' => $classTime['session_name'],
-                    'days' => $classTime['days']
-                ]
-            );
-
             // Create student
             $student = Student::create([
                 'name' => $validated['name'],
@@ -172,7 +192,7 @@ class StudentController extends Controller
                 'course_type' => $validated['course_type'],
                 'profession' => $validated['profession'],
                 'score' => $validated['score'],
-                'class_session_id' => $session->id
+                'class_session_id' => $sessionInfo['session_id']
             ]);
 
             // Handle screenshot upload
@@ -194,13 +214,10 @@ class StudentController extends Controller
             ]);
 
             // Update session count
-            $session->increment('current_count');
+            ClassSession::where('id', $sessionInfo['session_id'])->increment('current_count');
 
-            // Send confirmation email ONLY (No SMS for application submission)
+            // Send confirmation email
             $this->sendApplicationEmail($student, $application);
-            
-            // Don't send SMS for application submission
-            // SMS will only be sent when application is approved
 
             DB::commit();
 
@@ -217,7 +234,8 @@ class StudentController extends Controller
                     'application_id' => $application->id,
                     'name' => $student->name,
                     'batch' => $activeBatch->name,
-                    'class_time' => $session->time,
+                    'class_time' => $sessionInfo['time'],
+                    'class_days' => $sessionInfo['days'],
                     'payment_id' => $application->payment_id,
                     'message' => 'আপনি ২৪ ঘন্টার মধ্যে confirmation পাবেন।'
                 ]
@@ -243,48 +261,51 @@ class StudentController extends Controller
     }
 
     /**
-     * Determine class time based on profession and score
+     * Determine class session based on profession and score
      */
-    private function determineClassTime($profession, $score)
+    private function determineClassSession($profession, $score, $activeBatch)
     {
         $condition = TimeCondition::where('profession', $profession)->first();
         
-        if (!$condition) {
-            // Return default if no condition found
-            return [
-                'time' => 'Evening 7:00 PM',
-                'session_name' => 'General Session',
-                'days' => 'Sunday, Tuesday, Thursday'
-            ];
-        }
+        $targetTime = '';
         
-        $sessionName = $this->getSessionName($profession);
-        $days = $this->getClassDays($profession);
-        
-        if ($condition->is_fixed) {
-            return [
-                'time' => $condition->fixed_time,
-                'session_name' => $sessionName,
-                'days' => $days
-            ];
-        }
-        
-        // Score-based time selection
-        foreach ($condition->score_rules as $rule) {
-            if ($score >= $rule['min_score'] && $score <= $rule['max_score']) {
-                return [
-                    'time' => $rule['time'],
-                    'session_name' => $sessionName,
-                    'days' => $days
-                ];
+        if ($condition) {
+            if ($condition->is_fixed) {
+                $targetTime = $condition->fixed_time;
+            } else {
+                foreach ($condition->score_rules as $rule) {
+                    if ($score >= $rule['min_score'] && $score <= $rule['max_score']) {
+                        $targetTime = $rule['time'];
+                        break;
+                    }
+                }
             }
         }
         
-        // Default fallback
+        // Find matching session or create one
+        $session = $activeBatch->classSessions()
+            ->where('time', $targetTime)
+            ->first();
+        
+        if (!$session) {
+            // Get first available session as fallback
+            $session = $activeBatch->classSessions()->first();
+        }
+        
+        if (!$session) {
+            // Create a default session if none exists
+            $session = $activeBatch->classSessions()->create([
+                'session_name' => $this->getSessionName($profession),
+                'time' => $targetTime ?: 'Evening 7:00 PM',
+                'days' => $this->getClassDays($profession)
+            ]);
+        }
+        
         return [
-            'time' => 'Evening 7:00 PM',
-            'session_name' => 'General Session',
-            'days' => 'Sunday, Tuesday, Thursday'
+            'session_id' => $session->id,
+            'time' => $session->time,
+            'days' => $session->days,
+            'session_name' => $session->session_name
         ];
     }
 
@@ -362,6 +383,7 @@ class StudentController extends Controller
             'status' => $application->status,
             'batch' => $application->batch->name,
             'class_time' => $application->student->classSession->time ?? 'N/A',
+            'class_days' => $application->student->classSession->days ?? 'N/A',
             'message' => $this->getStatusMessage($application->status)
         ]);
     }

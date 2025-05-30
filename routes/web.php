@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\BatchController;
 use App\Http\Controllers\Admin\ApplicationController;
 use App\Http\Controllers\Admin\PaymentMethodController;
 use App\Http\Controllers\Admin\TimeConditionController;
+use App\Http\Controllers\Admin\ClassSessionController;
 use App\Services\SmsService;
 
 // Student Routes
@@ -34,6 +35,14 @@ Route::prefix('admin')->group(function () {
         Route::get('/batches', [BatchController::class, 'index'])->name('admin.batches');
         Route::post('/batches', [BatchController::class, 'create'])->name('admin.batches.create');
         Route::put('/batches/{batch}/close', [BatchController::class, 'close'])->name('admin.batches.close');
+        Route::put('/batches/{batch}/reactivate', [BatchController::class, 'reactivate'])->name('admin.batches.reactivate'); // New route
+        Route::delete('/batches/{batch}', [BatchController::class, 'destroy'])->name('admin.batches.destroy'); // New route 
+        // Class Sessions Management - NEW ROUTES
+        Route::get('/class-sessions', [ClassSessionController::class, 'index'])->name('admin.class.sessions');
+        Route::post('/class-sessions', [ClassSessionController::class, 'store'])->name('admin.class.sessions.store');
+        Route::get('/class-sessions/{session}', [ClassSessionController::class, 'show'])->name('admin.class.sessions.show');
+        Route::put('/class-sessions/{session}', [ClassSessionController::class, 'update'])->name('admin.class.sessions.update');
+        Route::delete('/class-sessions/{session}', [ClassSessionController::class, 'destroy'])->name('admin.class.sessions.destroy');
         
         // Applications
         Route::get('/applications', [ApplicationController::class, 'index'])->name('admin.applications');
